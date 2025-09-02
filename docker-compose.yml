@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:15.14
+    container_name: loretto_dw
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: metabase
+
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d
+
+  metabase:
+    image: metabase/metabase:v0.56.3.6
+    container_name: loretto_metabase
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: postgres
+      MB_DB_PASS: postgres
+      MB_DB_HOST: db
+    depends_on:
+      - db
+  streamlit:
+    build:
+      context: ./app
+      dockerfile: ../Dockerfile
+    container_name: loretto_app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app:/app
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=loretto_dw
+    depends_on:
+      - db
+volumes:
+  db_data:
