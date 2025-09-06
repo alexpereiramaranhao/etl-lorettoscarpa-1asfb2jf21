@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS fato_lancamento (
                                                id_tempo INT NOT NULL,
                                                descricao VARCHAR(255),
     valor NUMERIC(15,2) NOT NULL,
+    id_hash TEXT NOT NULL UNIQUE,
     CONSTRAINT fk_fato_tipo FOREIGN KEY (id_tipo)
     REFERENCES dim_tipo (id_tipo),
     CONSTRAINT fk_fato_grupo FOREIGN KEY (id_grupo)
@@ -72,3 +73,4 @@ CREATE TABLE IF NOT EXISTS fato_lancamento (
     CONSTRAINT fk_fato_tempo FOREIGN KEY (id_tempo)
     REFERENCES dim_tempo (id_tempo)
     );
+

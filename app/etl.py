@@ -1,4 +1,5 @@
 import pandas as pd
+
 from sqlalchemy.engine import Engine
 from sqlalchemy import text
 from db import get_engine   # 👈 precisa desse import
@@ -12,7 +13,7 @@ def load_staging(df: pd.DataFrame, engine: Engine, table_name: str = "staging_la
     Carrega DataFrame em tabela de staging no Postgres.
     Se a tabela não existir, será criada automaticamente.
     """
-    df.to_sql(table_name, engine, if_exists="append", index=False)
+    df.to_sql(table_name, engine, if_exists="replace", index=False)
 
     logger.info(f"{len(df)} registros inseridos na tabela {table_name}")
 
@@ -93,21 +94,22 @@ def load_fato_lancamento(engine: Engine):
     Se já existir, ignora.
     """
     sql = """
-    INSERT INTO fato_lancamento (id_tipo, id_grupo, id_categoria, id_tempo, descricao, valor)
+    INSERT INTO fato_lancamento (id_tipo, id_grupo, id_categoria, id_tempo, descricao, valor, id_hash)
     SELECT
         dt.id_tipo,
         dg.id_grupo,
         dc.id_categoria,
         dtmp.id_tempo,
         sl."Descrição",
-        sl.valor
+        sl.valor,
+        sl.id_hash
     FROM staging_lancamentos sl
     JOIN dim_tipo dt ON dt.nome_tipo = sl."Tipo"
     JOIN dim_grupo dg ON dg.nome_grupo = sl."Grupo" AND dg.id_tipo = dt.id_tipo
     JOIN dim_categoria dc ON dc.nome_categoria = sl."Categoria" AND dc.id_grupo = dg.id_grupo
     JOIN dim_tempo dtmp ON dtmp.ano = SPLIT_PART(sl.data, '/', 2)::int
                        AND dtmp.mes = SPLIT_PART(sl.data, '/', 1)::int
-    ON CONFLICT DO NOTHING;
+    ON CONFLICT (id_hash) DO NOTHING;
     """
     with engine.begin() as conn:
         conn.execute(text(sql))

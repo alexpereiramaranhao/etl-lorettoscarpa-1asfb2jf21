@@ -5,7 +5,7 @@ from sqlalchemy import NUMERIC
 from etl import run_etl
 from logger import get_logger
 
-from utils import normalize_valor
+from utils import normalize_valor, gerar_hash
 
 logger = get_logger(__name__)
 
@@ -22,6 +22,7 @@ if uploaded_file is not None:
         df = pd.read_csv(uploaded_file, sep=",", quotechar='"', decimal=",")
 
         df["valor"] = df["valor"].fillna("0")
+        df["id_hash"] = df.apply(gerar_hash, axis=1)
         df = normalize_valor(df)
 
         st.success("✅ Arquivo carregado com sucesso!")

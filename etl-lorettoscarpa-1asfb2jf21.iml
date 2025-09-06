@@ -4,7 +4,7 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$" />
     <content url="file://$MODULE_DIR$/.venv" />
-    <orderEntry type="jdk" jdkName="Python 3.12 (etl-lorettoscarpa-1asfb2jf21)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.12" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
