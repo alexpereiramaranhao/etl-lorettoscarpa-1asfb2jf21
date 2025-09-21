@@ -14,13 +14,52 @@ def run_command(command, check=True):
     """Executa um comando no shell e lida com erros."""
     print(f"[*] Executando: {' '.join(command)}")
     try:
-        # Usamos check=True para lançar uma exceção se o comando falhar
         result = subprocess.run(command, check=check, capture_output=True, text=True)
         return result
     except subprocess.CalledProcessError as e:
         print(f"[!] Erro ao executar o comando: {' '.join(command)}")
         print(f"    Saída do erro: {e.stderr}")
         sys.exit(1)
+
+def install_docker():
+    """Instala o Docker Engine e o Docker Compose seguindo o método oficial."""
+    print("\n[+] Instalando Docker e Docker Compose...")
+    try:
+        # Verifica se o Docker já está instalado
+        run_command(['docker', '--version'], check=False)
+        print("    - Docker já parece estar instalado. Pulando.")
+        return
+    except FileNotFoundError:
+        # Se o comando 'docker' não for encontrado, prossegue com a instalação
+        print("    - Docker não encontrado. Iniciando instalação.")
+        # 1. Configurar o repositório do Docker
+        run_command(['apt-get', 'install', '-y', 'ca-certificates', 'curl'])
+        run_command(['install', '-m', '0755', '-d', '/etc/apt/keyrings'])
+        run_command(['curl', '-fsSL', 'https://download.docker.com/linux/ubuntu/gpg', '-o', '/etc/apt/keyrings/docker.asc'])
+        run_command(['chmod', 'a+r', '/etc/apt/keyrings/docker.asc'])
+        
+        # Adiciona o repositório às fontes do APT
+        arch = run_command(['dpkg', '--print-architecture']).stdout.strip()
+        codename = run_command(['bash', '-c', '. /etc/os-release && echo "$VERSION_CODENAME"']).stdout.strip()
+        repo_string = f"deb [arch={arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {codename} stable"
+        
+        with open("/etc/apt/sources.list.d/docker.list", "w") as f:
+            f.write(repo_string)
+            
+        run_command(['apt-get', 'update'])
+        
+        # 2. Instalar os pacotes do Docker
+        print("    - Instalando pacotes do Docker Engine e Compose...")
+        run_command([
+            'apt-get', 'install', '-y',
+            'docker-ce',
+            'docker-ce-cli',
+            'containerd.io',
+            'docker-buildx-plugin',
+            'docker-compose-plugin'
+        ])
+        print("    - Docker e Docker Compose instalados com sucesso.")
+
 
 def generate_nginx_config(domain, port):
     """Gera o conteúdo da configuração do Nginx para um serviço."""
@@ -59,18 +98,25 @@ def main():
         config = json.load(f)
 
     services = config['services']
-
-    # 3. Instalar dependências (Apenas Nginx)
-    print("\n[+] Instalando Nginx...")
+    
+    # Atualiza os pacotes do sistema
+    print("\n[+] Atualizando a lista de pacotes do sistema...")
     run_command(['apt-get', 'update'])
-    # REMOVIDO: 'certbot' e 'python3-certbot-nginx' da lista de instalação
+
+    # ====================================================================
+    # NOVA SEÇÃO: Instalação do Docker e Docker Compose
+    # ====================================================================
+    install_docker()
+
+    # ====================================================================
+    # SEÇÃO EXISTENTE: Instalação do Nginx e configuração do Proxy
+    # ====================================================================
+    print("\n[+] Instalando Nginx...")
     run_command(['apt-get', 'install', '-y', 'nginx'])
 
-    # 4. Configurar o firewall
     print("\n[+] Configurando o firewall (UFW)...")
     run_command(['ufw', 'allow', 'Nginx Full'])
 
-    # 5. Gerar e ativar configurações do Nginx para cada serviço
     print("\n[+] Gerando e ativando configurações do Nginx...")
     for service in services:
         domain = service['domain']
@@ -89,15 +135,12 @@ def main():
         else:
             print(f"     - Link de ativação para {domain} já existe. Pulando.")
 
-    # 6. Testar e recarregar o Nginx
     print("\n[+] Testando e recarregando o Nginx...")
     run_command(['nginx', '-t'])
     run_command(['systemctl', 'reload', 'nginx'])
 
-    # 7. REMOVIDO: Bloco inteiro de execução do Certbot foi removido daqui.
-
-    print("\n[✓] Configuração do Nginx (HTTP) concluída com sucesso!")
-    print("Seus sites devem estar acessíveis via HTTP (sem 's').")
+    print("\n[✓] Setup do ambiente (Docker, Compose e Nginx) concluído com sucesso!")
+    print("Agora você pode clonar seu repositório e rodar 'docker-compose up -d'.")
     print("Verifique os endereços no seu navegador antes de prosseguir com o SSL.")
 
 if __name__ == '__main__':
