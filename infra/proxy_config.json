@@ -1,0 +1,13 @@
+{
+    "admin_email": "alexpereira365@gmail.com",
+    "services": [
+      {
+        "domain": "metabase.aviaconsultoria.com.br",
+        "port": 3000
+      },
+      {
+        "domain": "app.aviaconsultoria.com.br",
+        "port": 8501
+      }
+    ]
+  }
