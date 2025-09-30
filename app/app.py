@@ -22,7 +22,7 @@ if uploaded_file is not None:
         df = pd.read_csv(uploaded_file, sep=",", quotechar='"', decimal=",")
 
         # Validar campos obrigatórios usando pandas
-        campos_obrigatorios = ["Descrição", "Tipo", "Grupo", "Categoria", "data", "valor"]
+        campos_obrigatorios = ["Descrição", "Tipo", "Grupo", "Categoria", "Classificação", "Data", "Valor"]
         
         # Verificar se todos os campos obrigatórios existem
         campos_faltando = [campo for campo in campos_obrigatorios if campo not in df.columns]
@@ -34,20 +34,7 @@ if uploaded_file is not None:
         df_validacao = df[campos_obrigatorios].copy()
         df_validacao = df_validacao.replace('', pd.NA)  # Converte strings vazias para NA
         df_validacao = df_validacao.replace(r'^\s*$', pd.NA, regex=True)  # Converte strings só com espaços para NA
-        
-        # Validar coluna data - todos os valores devem ser iguais
-        if 'data' in df.columns:
-            valores_unicos_data = df['data'].nunique()
-            if valores_unicos_data > 1:
-                st.error("🚫 Erro na coluna 'data': Encontradas datas diferentes!")
-                st.write("**Valores únicos encontrados na coluna 'data':**")
-                datas_unicas = df['data'].unique()
-                for data in datas_unicas:
-                    count = (df['data'] == data).sum()
-                    st.write(f"- {data}: {count} registro(s)")
-                st.error("Todos os registros devem ter a mesma data. Corrija os dados e faça upload novamente.")
-                st.stop()
-        
+
         # Usar pandas para encontrar registros com valores nulos
         registros_com_nulos = df_validacao.isnull().any(axis=1)
         
@@ -75,7 +62,7 @@ if uploaded_file is not None:
             st.stop()
 
         # Se chegou até aqui, não há valores nulos
-        df["valor"] = df["valor"].fillna("0")
+        df["Valor"] = df["Valor"].fillna("0")
         df["id_hash"] = df.apply(gerar_hash, axis=1)
         df = normalize_valor(df)
 
@@ -89,7 +76,7 @@ if uploaded_file is not None:
                 engine = get_engine()
 
                 # Carregar staging
-                df.to_sql("staging_lancamentos", engine, if_exists="replace", index=False, dtype={"valor": NUMERIC(15,2)})
+                df.to_sql("staging_lancamentos", engine, if_exists="replace", index=False, dtype={"Valor": NUMERIC(15,2)})
                 logger.info(f"{len(df)} registros inseridos em staging_lancamentos")
                 st.info(f"📥 {len(df)} registros inseridos em staging_lancamentos")
 

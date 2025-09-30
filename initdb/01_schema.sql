@@ -16,6 +16,14 @@ CREATE TABLE IF NOT EXISTS dim_tipo (
     );
 
 --------------------------------------------------------------------------------
+-- Dimensão Classificacao
+--------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS dim_classificacao (
+                                        id_classificacao SERIAL PRIMARY KEY,
+                                        nome_classificacao VARCHAR(256) NOT NULL UNIQUE   -- 👈 garante unicidade
+    );
+
+--------------------------------------------------------------------------------
 -- Dimensão Grupo
 --------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS dim_grupo (
@@ -61,6 +69,7 @@ CREATE TABLE IF NOT EXISTS fato_lancamento (
                                                id_grupo INT NOT NULL,
                                                id_categoria INT NOT NULL,
                                                id_tempo INT NOT NULL,
+                                               id_classificacao INT NOT NULL,
                                                descricao VARCHAR(255),
     valor NUMERIC(15,2) NOT NULL,
     id_hash TEXT NOT NULL UNIQUE,
@@ -68,6 +77,8 @@ CREATE TABLE IF NOT EXISTS fato_lancamento (
     REFERENCES dim_tipo (id_tipo),
     CONSTRAINT fk_fato_grupo FOREIGN KEY (id_grupo)
     REFERENCES dim_grupo (id_grupo),
+    CONSTRAINT fk_fato_classificacao FOREIGN KEY (id_classificacao)
+    REFERENCES dim_classificacao (id_classificacao), -- ✅ CORRIGIDO
     CONSTRAINT fk_fato_categoria FOREIGN KEY (id_categoria)
     REFERENCES dim_categoria (id_categoria),
     CONSTRAINT fk_fato_tempo FOREIGN KEY (id_tempo)
